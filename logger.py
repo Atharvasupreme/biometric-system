@@ -1,23 +1,23 @@
 import serial
 import csv
-from datetime import datetime
 
-# Configure the serial port (Virtual COM port for simulation)
-ser = serial.Serial('COM3', 9600) 
-
-def log_attendance(user_id):
-    now = datetime.now()
-    date_string = now.strftime("%Y-%m-%d")
-    time_string = now.strftime("%H:%M:%S")
-    
-    with open('attendance_log.csv', 'a', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow([user_id, date_string, time_string])
-    print(f"Logged: User {user_id} at {time_string}")
+# Change 'COM3' to your Arduino's port
+ser = serial.Serial('COM3', 9600)
+print("Listening for attendance data...")
 
 while True:
-    if ser.in_waiting > 0:
+    try:
         line = ser.readline().decode('utf-8').strip()
-        if "LOG_DATA:ID_" in line:
-            user_id = line.split('_')[-1]
-            log_attendance(user_id)
+        if "ID:" in line:
+            # Data format: ID:1,2025-05-20T10:30:00
+            data = line.replace("ID:", "").split(",")
+            user_id = data[0]
+            timestamp = data[1]
+            
+            with open('attendance.csv', 'a', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow([user_id, timestamp])
+            
+            print(f"User {user_id} logged at {timestamp}")
+    except KeyboardInterrupt:
+        break
